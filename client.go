@@ -1,6 +1,11 @@
 package buffer
 
-import "github.com/franela/goreq"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+)
 
 const (
 	URL = "https://api.bufferapp.com/1"
@@ -25,25 +30,25 @@ type ResponseUpdate struct {
 }
 
 func (c *Client) CreateUpdate(text string, profileIds []string, options map[string]interface{}) []Update {
+	urlEndpoint := c.Url + "/updates/create.json?access_token=" + c.AccessToken
+	params := url.Values{}
+	params.Set("text", text)
+	for _, p := range profileIds {
+		params.Add("profile_ids[]", p)
+	}
 
-	params := options
-	params["Text"] = text
-	params["ProfileIds"] = profileIds
-
-	request, err := goreq.Request{
-		Method:      "POST",
-		Uri:         c.Url + "/updates/create.json",
-		Body:        params,
-		Accept:      "application/json",
-		ContentType: "application/json",
-	}.Do()
+	request, err := http.PostForm(urlEndpoint, params)
 
 	if err != nil {
 		panic(err)
 	}
 
+	defer request.Body.Close()
+
+	requestBodyByte, _ := ioutil.ReadAll(request.Body)
+
 	response := new(ResponseUpdate)
-	err = request.Body.FromJsonTo(&response)
+	err = json.Unmarshal(requestBodyByte, &response)
 
 	if err != nil {
 		panic(err)
