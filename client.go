@@ -22,39 +22,45 @@ type Update struct {
 	ProfileId string
 }
 
-type ResponseUpdate struct {
-	Success          bool
-	BufferCount      int
-	BufferPercentage int
-	Updates          []Update
 }
 
 func (c *Client) CreateUpdate(text string, profileIds []string, options map[string]interface{}) []Update {
-	urlEndpoint := c.Url + "/updates/create.json?access_token=" + c.AccessToken
+
 	params := url.Values{}
 	params.Set("text", text)
 	for _, p := range profileIds {
 		params.Add("profile_ids[]", p)
 	}
 
-	request, err := http.PostForm(urlEndpoint, params)
+	bufferResponse := c.send("updates/create", params)
 
-	if err != nil {
-		panic(err)
+	var response struct {
+		Success          bool
+		BufferCount      int
+		BufferPercentage int
+		Updates          []Update
 	}
 
-	defer request.Body.Close()
-
-	requestBodyByte, _ := ioutil.ReadAll(request.Body)
-
-	response := new(ResponseUpdate)
-	err = json.Unmarshal(requestBodyByte, &response)
+	err := json.Unmarshal(bufferResponse, &response)
 
 	if err != nil {
 		panic(err)
 	}
 
 	return response.Updates
+}
+
+func (c *Client) send(resource string, params url.Values) []byte {
+	urlEndpoint := c.Url + "/" + resource + ".json?access_token=" + c.AccessToken
+	request, err := http.PostForm(urlEndpoint, params)
+	if err != nil {
+		panic(err)
+	}
+
+	defer request.Body.Close()
+	requestBodyByte, _ := ioutil.ReadAll(request.Body)
+
+	return requestBodyByte
 }
 
 func NewClient(accessToken string) *Client {
