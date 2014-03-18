@@ -2,6 +2,7 @@ package buffer
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -41,14 +42,15 @@ type Profile struct {
 type Profiles []Profile
 
 func (c *Client) Profiles() Profiles {
-	bufferResponse := c.send("profiles", url.Values{})
-	response := new(Profiles)
+	bufferResponse := c.sendGET("profiles")
+	fmt.Println(string(bufferResponse[:]))
+	var response Profiles
 	err := json.Unmarshal(bufferResponse, &response)
 
 	if err != nil {
 		panic(err)
 	}
-	return *response
+	return response
 }
 
 func (c *Client) CreateUpdate(text string, profileIds []string, options map[string]interface{}) []Update {
@@ -59,7 +61,7 @@ func (c *Client) CreateUpdate(text string, profileIds []string, options map[stri
 		params.Add("profile_ids[]", p)
 	}
 
-	bufferResponse := c.send("updates/create", params)
+	bufferResponse := c.sendPOST("updates/create", params)
 
 	var response struct {
 		Success          bool
@@ -77,7 +79,20 @@ func (c *Client) CreateUpdate(text string, profileIds []string, options map[stri
 	return response.Updates
 }
 
-func (c *Client) send(resource string, params url.Values) []byte {
+func (c *Client) sendGET(resource string) []byte {
+	urlEndpoint := c.Url + "/" + resource + ".json?access_token=" + c.AccessToken
+	request, err := http.Get(urlEndpoint)
+	if err != nil {
+		panic(err)
+	}
+
+	defer request.Body.Close()
+	requestBodyByte, _ := ioutil.ReadAll(request.Body)
+
+	return requestBodyByte
+}
+
+func (c *Client) sendPOST(resource string, params url.Values) []byte {
 	urlEndpoint := c.Url + "/" + resource + ".json?access_token=" + c.AccessToken
 	request, err := http.PostForm(urlEndpoint, params)
 	if err != nil {
