@@ -22,6 +22,33 @@ type Update struct {
 	ProfileId string
 }
 
+type Profile struct {
+	Avatar            string
+	CreatedAt         int64
+	Default           bool
+	FormattedUsername string
+	Id                string
+	Schedules         []map[string][]string
+	Service           string
+	ServiceId         string
+	ServiceUsername   string
+	Statistics        map[string]interface{}
+	TeamMembers       []string
+	Timezone          string
+	UserId            string
+}
+
+type Profiles []Profile
+
+func (c *Client) Profiles() Profiles {
+	bufferResponse := c.send("profiles", url.Values{})
+	response := new(Profiles)
+	err := json.Unmarshal(bufferResponse, &response)
+
+	if err != nil {
+		panic(err)
+	}
+	return *response
 }
 
 func (c *Client) CreateUpdate(text string, profileIds []string, options map[string]interface{}) []Update {

@@ -52,4 +52,31 @@ func Test(t *testing.T) {
 			Expect(updates[0].Text).Should(Equal("This is an example update"))
 		})
 	})
+
+	g.Describe("client.Profiles", func() {
+		var ts *httptest.Server
+
+		g.Before(func() {
+			ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(200)
+				body, err := Fixture(r.Method + r.URL.Path)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Fprint(w, string(body))
+			}))
+		})
+
+		g.After(func() {
+			ts.Close()
+		})
+
+		g.It("returns Updates", func() {
+			client := NewClient("accessToken")
+			client.Url = ts.URL
+			profiles := client.Profiles()
+			id := profiles[0].Id
+			Expect(id).Should(Equal("4eb854340acb04e870000010"))
+		})
+	})
 }
