@@ -2,7 +2,6 @@ package buffer
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -19,6 +18,7 @@ type Client struct {
 
 type Update struct {
 	Id        string
+	Status    string
 	Text      string
 	ProfileId string
 }
@@ -32,7 +32,7 @@ type Profile struct {
 	Schedules         []map[string][]string
 	Service           string
 	ServiceId         string
-	ServiceUsername   string
+	ServiceUsername   string `json:"service_username"`
 	Statistics        map[string]interface{}
 	TeamMembers       []string
 	Timezone          string
@@ -43,7 +43,6 @@ type Profiles []Profile
 
 func (c *Client) Profiles() Profiles {
 	bufferResponse := c.sendGET("profiles")
-	fmt.Println(string(bufferResponse[:]))
 	var response Profiles
 	err := json.Unmarshal(bufferResponse, &response)
 
@@ -77,6 +76,36 @@ func (c *Client) CreateUpdate(text string, profileIds []string, options map[stri
 	}
 
 	return response.Updates
+}
+
+func (c *Client) Sent(p Profile) []Update {
+	bufferResponse := c.sendGET("profiles/" + p.Id + "/updates/sent")
+	var response struct {
+		Total            int
+		Updates          []Update
+	}
+	err := json.Unmarshal(bufferResponse, &response)
+	if err != nil {
+		panic(err)
+	}
+	return response.Updates
+}
+
+func (c *Client) Pending(p Profile) []Update {
+	bufferResponse := c.sendGET("profiles/" + p.Id + "/updates/pending")
+	var response struct {
+		Total            int
+		Updates          []Update
+	}
+	err := json.Unmarshal(bufferResponse, &response)
+	if err != nil {
+		panic(err)
+	}
+	return response.Updates
+}
+
+func (c *Client) Destroy(u Update) {
+	c.sendPOST("updates/" + u.Id + "/destroy", url.Values{})
 }
 
 func (c *Client) sendGET(resource string) []byte {
