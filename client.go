@@ -108,7 +108,7 @@ func (c *Client) Pending(p Profile) []Update {
 }
 
 func (c *Client) Shuffle(p Profile) {
-	c.sendPOST("profile/" + p.Id + "/updates/shuffle", url.Values{})
+	c.sendPOST("profiles/" + p.Id + "/updates/shuffle", url.Values{})
 }
 
 func (c *Client) Destroy(u Update) {
