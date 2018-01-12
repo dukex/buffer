@@ -52,12 +52,15 @@ func (c *Client) Profiles() Profiles {
 	return response
 }
 
-func (c *Client) CreateUpdate(text string, profileIds []string, options map[string]interface{}) []Update {
+func (c *Client) CreateUpdate(text string, profileIds, photos []string) []Update {
 
 	params := url.Values{}
 	params.Set("text", text)
 	for _, p := range profileIds {
 		params.Add("profile_ids[]", p)
+	}
+	for _, p := range photos {
+		params.Add("media[photo]", p)
 	}
 
 	bufferResponse := c.sendPOST("updates/create", params)
@@ -102,6 +105,10 @@ func (c *Client) Pending(p Profile) []Update {
 		panic(err)
 	}
 	return response.Updates
+}
+
+func (c *Client) Shuffle(p Profile) {
+	c.sendPOST("profiles/" + p.Id + "/updates/shuffle", url.Values{})
 }
 
 func (c *Client) Destroy(u Update) {
